@@ -1,0 +1,1529 @@
+<!-- ==========================================
+     TRANSLATE WIDGET - Dịch Ngôn Ngữ Popup
+     Thêm đoạn code này vào trước thẻ </body>
+     ========================================== -->
+
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+
+  #tw-root * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  /* --- Floating Button --- */
+  #tw-fab {
+    position: fixed;
+    bottom: 28px;
+    right: 28px;
+    z-index: 99999;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    border: none;
+    cursor: pointer;
+    background: linear-gradient(135deg, #1a73e8, #0d47a1);
+    box-shadow: 0 4px 20px rgba(26,115,232,0.45);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.25s cubic-bezier(.34,1.56,.64,1), box-shadow 0.25s;
+    outline: none;
+  }
+  #tw-fab:hover {
+    transform: scale(1.1) rotate(-5deg);
+    box-shadow: 0 6px 28px rgba(26,115,232,0.6);
+  }
+  #tw-fab svg { width: 26px; height: 26px; fill: #fff; transition: transform 0.3s; }
+  #tw-fab.active { background: linear-gradient(135deg, #0d47a1, #1a73e8); }
+  #tw-fab.active svg { transform: rotate(180deg); }
+
+  /* Pulse ring */
+  #tw-fab::after {
+    content: '';
+    position: absolute;
+    width: 100%; height: 100%;
+    border-radius: 50%;
+    border: 2px solid rgba(26,115,232,0.5);
+    animation: tw-pulse 2s ease-out infinite;
+  }
+  @keyframes tw-pulse {
+    0% { transform: scale(1); opacity: 1; }
+    100% { transform: scale(1.7); opacity: 0; }
+  }
+
+  /* --- Popup Panel --- */
+  #tw-panel {
+    position: fixed;
+    bottom: 96px;
+    right: 28px;
+    z-index: 99998;
+    width: 340px;
+    background: #fff;
+    border-radius: 20px;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.18), 0 1.5px 6px rgba(0,0,0,0.08);
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    overflow: hidden;
+    transform: scale(0.85) translateY(20px);
+    transform-origin: bottom right;
+    opacity: 0;
+    pointer-events: none;
+    transition: transform 0.3s cubic-bezier(.34,1.56,.64,1), opacity 0.25s ease;
+  }
+  #tw-panel.open {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+    pointer-events: all;
+  }
+
+  /* Header */
+  #tw-header {
+    background: linear-gradient(135deg, #1a73e8 0%, #0d47a1 100%);
+    padding: 18px 20px 14px;
+    color: #fff;
+  }
+  #tw-header-top {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 4px;
+  }
+  #tw-header-top svg { width: 22px; height: 22px; fill: rgba(255,255,255,0.9); flex-shrink: 0; }
+  #tw-title {
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: -0.2px;
+    color: #fff;
+  }
+  #tw-subtitle {
+    font-size: 11.5px;
+    color: rgba(255,255,255,0.72);
+    padding-left: 32px;
+    line-height: 1.4;
+  }
+
+  /* Body */
+  #tw-body { padding: 16px 18px 18px; }
+
+  /* Lang row */
+  .tw-lang-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 14px;
+  }
+  .tw-lang-box {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+  .tw-lang-label {
+    font-size: 10.5px;
+    font-weight: 600;
+    color: #9aa0a6;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+  }
+  .tw-lang-select {
+    width: 100%;
+    padding: 9px 12px;
+    border: 1.5px solid #e0e0e0;
+    border-radius: 10px;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 13.5px;
+    font-weight: 500;
+    color: #202124;
+    background: #f8f9fa;
+    outline: none;
+    cursor: pointer;
+    transition: border-color 0.2s, background 0.2s;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='%239aa0a6'%3E%3Cpath d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    padding-right: 30px;
+  }
+  .tw-lang-select:focus { border-color: #1a73e8; background: #fff; }
+
+  /* Swap button */
+  #tw-swap {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    border: 1.5px solid #e0e0e0;
+    background: #fff;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-top: 18px;
+    transition: background 0.2s, border-color 0.2s, transform 0.3s;
+    outline: none;
+  }
+  #tw-swap:hover { background: #e8f0fe; border-color: #1a73e8; transform: rotate(180deg); }
+  #tw-swap svg { width: 16px; height: 16px; fill: #5f6368; }
+  #tw-swap:hover svg { fill: #1a73e8; }
+
+  /* Translate button */
+  #tw-translate-btn {
+    width: 100%;
+    padding: 12px;
+    background: linear-gradient(135deg, #1a73e8, #1557b0);
+    color: #fff;
+    border: none;
+    border-radius: 12px;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: opacity 0.2s, transform 0.15s;
+    outline: none;
+    letter-spacing: -0.1px;
+  }
+  #tw-translate-btn:hover { opacity: 0.9; transform: translateY(-1px); }
+  #tw-translate-btn:active { transform: translateY(0); opacity: 1; }
+  #tw-translate-btn svg { width: 18px; height: 18px; fill: #fff; }
+
+  /* Status bar */
+  #tw-status {
+    margin-top: 12px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    font-size: 12.5px;
+    font-weight: 500;
+    display: none;
+    align-items: center;
+    gap: 8px;
+    line-height: 1.4;
+  }
+  #tw-status.info { background: #e8f0fe; color: #1a73e8; display: flex; }
+  #tw-status.success { background: #e6f4ea; color: #137333; display: flex; }
+  #tw-status.error { background: #fce8e6; color: #c5221f; display: flex; }
+  #tw-status.loading { background: #f1f3f4; color: #5f6368; display: flex; }
+
+  /* Restore button */
+  #tw-restore-btn {
+    width: 100%;
+    margin-top: 8px;
+    padding: 9px;
+    background: transparent;
+    color: #5f6368;
+    border: 1.5px solid #e0e0e0;
+    border-radius: 10px;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    transition: all 0.2s;
+    outline: none;
+  }
+  #tw-restore-btn:hover { background: #f1f3f4; border-color: #bdc1c6; color: #202124; }
+  #tw-restore-btn svg { width: 14px; height: 14px; fill: currentColor; }
+
+  /* Spinner */
+  .tw-spinner {
+    width: 14px; height: 14px;
+    border: 2px solid rgba(26,115,232,0.3);
+    border-top-color: #1a73e8;
+    border-radius: 50%;
+    animation: tw-spin 0.7s linear infinite;
+    flex-shrink: 0;
+  }
+  @keyframes tw-spin { to { transform: rotate(360deg); } }
+
+  /* Divider */
+  .tw-divider {
+    height: 1px;
+    background: #f1f3f4;
+    margin: 14px 0;
+  }
+
+  /* Footer */
+  #tw-footer {
+    padding: 0 18px 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    color: #9aa0a6;
+    font-size: 11px;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+  }
+  #tw-footer svg { width: 13px; height: 13px; fill: #9aa0a6; }
+
+  /* Dark overlay on mobile */
+  @media (max-width: 400px) {
+    #tw-panel { width: calc(100vw - 32px); right: 16px; bottom: 84px; }
+    #tw-fab { right: 16px; bottom: 16px; }
+  }
+</style>
+
+<div id="tw-root">
+  <!-- FAB Button -->
+  <button id="tw-fab" title="Dịch trang">
+    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+      <path d="M12.87 15.07l-2.54-2.51.03-.03A17.52 17.52 0 0014.07 6H17V4h-7V2H8v2H1v2h11.17C11.5 7.92 10.44 9.75 9 11.35 8.07 10.32 7.3 9.19 6.69 8h-2c.73 1.63 1.73 3.17 2.98 4.56l-5.09 5.02L4 19l5-5 3.11 3.11.76-2.04zM18.5 10h-2L12 22h2l1.12-3h4.75L21 22h2l-4.5-12zm-2.62 7l1.62-4.33L19.12 17h-3.24z"/>
+    </svg>
+  </button>
+
+  <!-- Popup Panel -->
+  <div id="tw-panel">
+    <!-- Header -->
+    <div id="tw-header">
+      <div id="tw-header-top">
+        <svg viewBox="0 0 24 24"><path d="M12.87 15.07l-2.54-2.51.03-.03A17.52 17.52 0 0014.07 6H17V4h-7V2H8v2H1v2h11.17C11.5 7.92 10.44 9.75 9 11.35 8.07 10.32 7.3 9.19 6.69 8h-2c.73 1.63 1.73 3.17 2.98 4.56l-5.09 5.02L4 19l5-5 3.11 3.11.76-2.04zM18.5 10h-2L12 22h2l1.12-3h4.75L21 22h2l-4.5-12zm-2.62 7l1.62-4.33L19.12 17h-3.24z"/></svg>
+        <span id="tw-title">Dịch Trang</span>
+      </div>
+      <div id="tw-subtitle">Dịch nội dung trang sang ngôn ngữ khác</div>
+    </div>
+
+    <!-- Body -->
+    <div id="tw-body">
+      <div class="tw-lang-row">
+        <div class="tw-lang-box">
+          <span class="tw-lang-label">Ngôn ngữ gốc</span>
+          <select class="tw-lang-select" id="tw-src-lang">
+            <option value="auto">🌐 Tự động nhận diện</option>
+            <option value="vi" selected>🇻🇳 Tiếng Việt</option>
+            <option value="en">🇺🇸 English</option>
+            <option value="zh-CN">🇨🇳 中文 (Giản thể)</option>
+            <option value="zh-TW">🇹🇼 中文 (Phồn thể)</option>
+            <option value="ja">🇯🇵 日本語</option>
+            <option value="ko">🇰🇷 한국어</option>
+            <option value="fr">🇫🇷 Français</option>
+            <option value="de">🇩🇪 Deutsch</option>
+            <option value="es">🇪🇸 Español</option>
+            <option value="it">🇮🇹 Italiano</option>
+            <option value="pt">🇵🇹 Português</option>
+            <option value="ru">🇷🇺 Русский</option>
+            <option value="ar">🇸🇦 العربية</option>
+            <option value="th">🇹🇭 ภาษาไทย</option>
+            <option value="id">🇮🇩 Bahasa Indonesia</option>
+          </select>
+        </div>
+
+        <button id="tw-swap" title="Hoán đổi ngôn ngữ">
+          <svg viewBox="0 0 24 24"><path d="M6.99 11L3 15l3.99 4v-3H14v-2H6.99v-3zM21 9l-3.99-4v3H10v2h7.01v3L21 9z"/></svg>
+        </button>
+
+        <div class="tw-lang-box">
+          <span class="tw-lang-label">Dịch sang</span>
+          <select class="tw-lang-select" id="tw-dest-lang">
+            <option value="en" selected>🇺🇸 English</option>
+            <option value="vi">🇻🇳 Tiếng Việt</option>
+            <option value="zh-CN">🇨🇳 中文 (Giản thể)</option>
+            <option value="zh-TW">🇹🇼 中文 (Phồn thể)</option>
+            <option value="ja">🇯🇵 日本語</option>
+            <option value="ko">🇰🇷 한국어</option>
+            <option value="fr">🇫🇷 Français</option>
+            <option value="de">🇩🇪 Deutsch</option>
+            <option value="es">🇪🇸 Español</option>
+            <option value="it">🇮🇹 Italiano</option>
+            <option value="pt">🇵🇹 Português</option>
+            <option value="ru">🇷🇺 Русский</option>
+            <option value="ar">🇸🇦 العربية</option>
+            <option value="th">🇹🇭 ภาษาไทย</option>
+            <option value="id">🇮🇩 Bahasa Indonesia</option>
+          </select>
+        </div>
+      </div>
+
+      <button id="tw-translate-btn">
+        <svg viewBox="0 0 24 24"><path d="M12.87 15.07l-2.54-2.51.03-.03A17.52 17.52 0 0014.07 6H17V4h-7V2H8v2H1v2h11.17C11.5 7.92 10.44 9.75 9 11.35 8.07 10.32 7.3 9.19 6.69 8h-2c.73 1.63 1.73 3.17 2.98 4.56l-5.09 5.02L4 19l5-5 3.11 3.11.76-2.04zM18.5 10h-2L12 22h2l1.12-3h4.75L21 22h2l-4.5-12zm-2.62 7l1.62-4.33L19.12 17h-3.24z"/></svg>
+        Dịch trang ngay
+      </button>
+
+      <div id="tw-status"></div>
+
+      <button id="tw-restore-btn">
+        <svg viewBox="0 0 24 24"><path d="M13 3a9 9 0 1 0 9 9h-2a7 7 0 1 1-7-7v4l5-5-5-5v4z"/></svg>
+        Khôi phục bản gốc
+      </button>
+    </div>
+
+    <div class="tw-divider"></div>
+
+    <div id="tw-footer">
+      <svg viewBox="0 0 24 24"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zm6.93 6h-2.95a15.65 15.65 0 0 0-1.38-3.56A8.03 8.03 0 0 1 18.92 8zM12 4.04c.83 1.2 1.48 2.53 1.91 3.96h-3.82c.43-1.43 1.08-2.76 1.91-3.96zM4.26 14C4.1 13.36 4 12.69 4 12s.1-1.36.26-2h3.38c-.08.66-.14 1.32-.14 2s.06 1.34.14 2H4.26zm.82 2h2.95c.32 1.25.78 2.45 1.38 3.56A7.987 7.987 0 0 1 5.08 16zm2.95-8H5.08a7.987 7.987 0 0 1 4.33-3.56A15.65 15.65 0 0 0 8.03 8zM12 19.96c-.83-1.2-1.48-2.53-1.91-3.96h3.82c-.43 1.43-1.08 2.76-1.91 3.96zM14.34 14H9.66c-.09-.66-.16-1.32-.16-2s.07-1.35.16-2h4.68c.09.65.16 1.32.16 2s-.07 1.34-.16 2zm.25 5.56c.6-1.11 1.06-2.31 1.38-3.56h2.95a8.03 8.03 0 0 1-4.33 3.56zM16.36 14c.08-.66.14-1.32.14-2s-.06-1.34-.14-2h3.38c.16.64.26 1.31.26 2s-.1 1.36-.26 2h-3.38z"/></svg>
+      Hỗ trợ bởi Google Translate
+    </div>
+  </div>
+</div>
+
+<script>
+(function() {
+  'use strict';
+
+  const fab = document.getElementById('tw-fab');
+  const panel = document.getElementById('tw-panel');
+  const translateBtn = document.getElementById('tw-translate-btn');
+  const restoreBtn = document.getElementById('tw-restore-btn');
+  const statusEl = document.getElementById('tw-status');
+  const srcLang = document.getElementById('tw-src-lang');
+  const destLang = document.getElementById('tw-dest-lang');
+  const swapBtn = document.getElementById('tw-swap');
+
+  let isTranslated = false;
+  let originalTexts = []; // { node, original }
+  let isLoading = false;
+
+  // === Toggle panel ===
+  fab.addEventListener('click', () => {
+    const isOpen = panel.classList.contains('open');
+    panel.classList.toggle('open');
+    fab.classList.toggle('active');
+    if (!isOpen) setStatus('info', '🌐 Chọn ngôn ngữ và nhấn Dịch trang ngay');
+  });
+
+  // Close on outside click
+  document.addEventListener('click', (e) => {
+    if (!document.getElementById('tw-root').contains(e.target)) {
+      panel.classList.remove('open');
+      fab.classList.remove('active');
+    }
+  });
+
+  // === Swap languages ===
+  swapBtn.addEventListener('click', () => {
+    const s = srcLang.value === 'auto' ? destLang.value : srcLang.value;
+    const d = srcLang.value === 'auto' ? 'vi' : destLang.value;
+    // Only swap if src is not auto
+    if (srcLang.value !== 'auto') {
+      const tmp = srcLang.value;
+      srcLang.value = destLang.value;
+      destLang.value = tmp;
+    }
+  });
+
+  // === Status helper ===
+  function setStatus(type, msg, spinner = false) {
+    statusEl.className = 'tw-status ' + type;
+    statusEl.innerHTML = spinner
+      ? `<div class="tw-spinner"></div><span>${msg}</span>`
+      : `<span>${msg}</span>`;
+    statusEl.style.display = 'flex';
+  }
+  function hideStatus() { statusEl.style.display = 'none'; }
+
+  // === Get all visible text nodes ===
+  function getTextNodes(root) {
+    const walker = document.createTreeWalker(
+      root,
+      NodeFilter.SHOW_TEXT,
+      {
+        acceptNode(node) {
+          const parent = node.parentElement;
+          if (!parent) return NodeFilter.FILTER_REJECT;
+          const tag = parent.tagName.toUpperCase();
+          // Skip script, style, noscript, tw-root
+          if (['SCRIPT','STYLE','NOSCRIPT','TEXTAREA','INPUT'].includes(tag)) return NodeFilter.FILTER_REJECT;
+          if (parent.closest('#tw-root')) return NodeFilter.FILTER_REJECT;
+          if (node.textContent.trim().length < 2) return NodeFilter.FILTER_REJECT;
+          return NodeFilter.FILTER_ACCEPT;
+        }
+      }
+    );
+    const nodes = [];
+    let n;
+    while ((n = walker.nextNode())) nodes.push(n);
+    return nodes;
+  }
+
+  // === Chunk array ===
+  function chunk(arr, size) {
+    const res = [];
+    for (let i = 0; i < arr.length; i += size) res.push(arr.slice(i, i + size));
+    return res;
+  }
+
+  // === Translate a batch of texts via Google Translate (no key needed) ===
+  async function translateTexts(texts, src, dest) {
+    const joined = texts.join('\n\n||||\n\n');
+    const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${src}&tl=${dest}&dt=t&q=${encodeURIComponent(joined)}`;
+    const res = await fetch(url);
+    if (!res.ok) throw new Error('Lỗi kết nối API dịch');
+    const data = await res.json();
+    // Parse result
+    const translated = data[0].map(item => item[0]).join('');
+    return translated.split('\n\n||||\n\n');
+  }
+
+  // === Main translate ===
+  translateBtn.addEventListener('click', async () => {
+    if (isLoading) return;
+
+    const dest = destLang.value;
+    const src = srcLang.value;
+
+    if (src !== 'auto' && src === dest) {
+      setStatus('error', '⚠️ Ngôn ngữ gốc và đích không được giống nhau!');
+      return;
+    }
+
+    // Restore if already translated
+    if (isTranslated) restoreOriginal();
+
+    isLoading = true;
+    translateBtn.disabled = true;
+    setStatus('loading', 'Đang thu thập nội dung...', true);
+
+    try {
+      const textNodes = getTextNodes(document.body);
+      if (textNodes.length === 0) throw new Error('Không tìm thấy nội dung để dịch');
+
+      originalTexts = textNodes.map(n => ({ node: n, original: n.textContent }));
+      const texts = originalTexts.map(t => t.original.trim());
+
+      setStatus('loading', `Đang dịch ${texts.length} đoạn văn...`, true);
+
+      // Batch: 40 texts per request
+      const batches = chunk(texts, 40);
+      const results = [];
+
+      for (let i = 0; i < batches.length; i++) {
+        setStatus('loading', `Dịch batch ${i+1}/${batches.length}...`, true);
+        const translated = await translateTexts(batches[i], src, dest);
+        results.push(...translated);
+        if (i < batches.length - 1) await new Promise(r => setTimeout(r, 300));
+      }
+
+      // Apply translations
+      originalTexts.forEach((item, idx) => {
+        if (results[idx] !== undefined) {
+          item.node.textContent = results[idx];
+        }
+      });
+
+      isTranslated = true;
+      const destName = destLang.options[destLang.selectedIndex].text.replace(/^[^\s]+\s/, '');
+      setStatus('success', `✅ Đã dịch sang ${destName} thành công!`);
+      restoreBtn.style.display = 'flex';
+
+    } catch (err) {
+      console.error('Translate error:', err);
+      setStatus('error', `❌ ${err.message || 'Lỗi không xác định. Vui lòng thử lại.'}`);
+      restoreOriginal();
+    } finally {
+      isLoading = false;
+      translateBtn.disabled = false;
+    }
+  });
+
+  // === Restore ===
+  function restoreOriginal() {
+    originalTexts.forEach(({ node, original }) => {
+      try { node.textContent = original; } catch(e) {}
+    });
+    originalTexts = [];
+    isTranslated = false;
+    restoreBtn.style.display = 'none';
+  }
+
+  restoreBtn.addEventListener('click', () => {
+    restoreOriginal();
+    setStatus('info', '🔄 Đã khôi phục nội dung gốc');
+  });
+
+})();
+</script>
+<!-- ========================================== --><!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tứ Bất Tử — Bốn Vị Thần Bất Tử Của Người Việt</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=Noto+Serif:ital,wght@0,400;0,600;1,400&family=Noto+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --ink: #1a0f00;
+      --parchment: #f5ead8;
+      --parchment-dark: #e8d4b0;
+      --gold: #c8912a;
+      --gold-light: #e8b84b;
+      --red: #8b1a1a;
+      --red-light: #c0392b;
+      --jade: #2d6a4f;
+      --jade-light: #40916c;
+      --smoke: #6b5c4a;
+      --cream: #fdf6e9;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--cream);
+      color: var(--ink);
+      font-family: 'Noto Serif', serif;
+      font-size: 17px;
+      line-height: 1.85;
+      overflow-x: hidden;
+    }
+
+    /* ─── Noise texture overlay ─── */
+    body::before {
+      content: '';
+      position: fixed; inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 9999;
+    }
+
+    /* ─── Progress bar ─── */
+    #progress-bar {
+      position: fixed; top: 0; left: 0; height: 3px;
+      background: linear-gradient(90deg, var(--red), var(--gold));
+      width: 0%; z-index: 1000;
+      transition: width 0.1s linear;
+    }
+
+    /* ─── Header / Hero ─── */
+    .hero {
+      position: relative;
+      min-height: 100vh;
+      display: flex; flex-direction: column; justify-content: center; align-items: center;
+      text-align: center;
+      padding: 80px 20px;
+      background:
+        radial-gradient(ellipse at 20% 50%, rgba(200,145,42,0.12) 0%, transparent 60%),
+        radial-gradient(ellipse at 80% 30%, rgba(139,26,26,0.10) 0%, transparent 55%),
+        radial-gradient(ellipse at 50% 80%, rgba(45,106,79,0.08) 0%, transparent 50%),
+        var(--parchment);
+      overflow: hidden;
+    }
+
+    .hero-border {
+      position: absolute; inset: 24px;
+      border: 1.5px solid rgba(200,145,42,0.35);
+      pointer-events: none;
+    }
+    .hero-border::before, .hero-border::after {
+      content: '✦';
+      position: absolute; font-size: 22px; color: var(--gold);
+    }
+    .hero-border::before { top: -14px; left: 50%; transform: translateX(-50%); }
+    .hero-border::after  { bottom: -14px; left: 50%; transform: translateX(-50%); }
+
+    .hero-corner {
+      position: absolute;
+      width: 60px; height: 60px;
+      border-color: var(--gold);
+      border-style: solid;
+      opacity: 0.5;
+    }
+    .hero-corner.tl { top: 24px; left: 24px; border-width: 2px 0 0 2px; }
+    .hero-corner.tr { top: 24px; right: 24px; border-width: 2px 2px 0 0; }
+    .hero-corner.bl { bottom: 24px; left: 24px; border-width: 0 0 2px 2px; }
+    .hero-corner.br { bottom: 24px; right: 24px; border-width: 0 2px 2px 0; }
+
+    .hero-eyebrow {
+      font-family: 'Noto Sans', sans-serif;
+      font-size: 11px; font-weight: 500;
+      letter-spacing: 4px; text-transform: uppercase;
+      color: var(--red);
+      margin-bottom: 28px;
+      opacity: 0; animation: fadeUp 0.8s 0.3s forwards;
+    }
+
+    .hero h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(52px, 9vw, 110px);
+      font-weight: 900;
+      line-height: 1.05;
+      letter-spacing: -1px;
+      color: var(--ink);
+      opacity: 0; animation: fadeUp 0.9s 0.5s forwards;
+    }
+
+    .hero h1 span {
+      display: block;
+      background: linear-gradient(135deg, var(--red) 0%, var(--gold) 50%, var(--red) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .hero-subtitle {
+      margin-top: 28px;
+      font-size: 18px;
+      font-style: italic;
+      color: var(--smoke);
+      max-width: 560px;
+      opacity: 0; animation: fadeUp 0.9s 0.7s forwards;
+    }
+
+    .hero-divider {
+      display: flex; align-items: center; gap: 16px;
+      margin: 36px auto;
+      width: 280px;
+      opacity: 0; animation: fadeUp 0.8s 0.9s forwards;
+    }
+    .hero-divider::before, .hero-divider::after {
+      content: '';
+      flex: 1; height: 1px;
+      background: linear-gradient(90deg, transparent, var(--gold), transparent);
+    }
+    .hero-divider span { color: var(--gold); font-size: 20px; }
+
+    .hero-meta {
+      display: flex; gap: 32px;
+      font-family: 'Noto Sans', sans-serif;
+      font-size: 12px; letter-spacing: 2px;
+      color: var(--smoke);
+      opacity: 0; animation: fadeUp 0.8s 1.1s forwards;
+    }
+    .hero-meta span::before { content: '— '; color: var(--gold); }
+
+    .scroll-hint {
+      position: absolute; bottom: 40px;
+      display: flex; flex-direction: column; align-items: center; gap: 8px;
+      font-family: 'Noto Sans', sans-serif;
+      font-size: 10px; letter-spacing: 3px; color: var(--smoke);
+      opacity: 0; animation: fadeUp 0.8s 1.5s forwards;
+    }
+    .scroll-hint::after {
+      content: '';
+      display: block; width: 1px; height: 48px;
+      background: linear-gradient(to bottom, var(--gold), transparent);
+      animation: scrollLine 1.8s ease-in-out infinite;
+    }
+
+    @keyframes scrollLine {
+      0%,100% { opacity: 1; transform: scaleY(1) translateY(0); }
+      50% { opacity: 0.4; transform: scaleY(0.6) translateY(10px); }
+    }
+
+    /* ─── Main content layout ─── */
+    .container {
+      max-width: 820px;
+      margin: 0 auto;
+      padding: 0 28px;
+    }
+
+    /* ─── Section ─── */
+    .section {
+      padding: 90px 0 60px;
+      opacity: 0; transform: translateY(40px);
+      transition: opacity 0.8s ease, transform 0.8s ease;
+    }
+    .section.visible { opacity: 1; transform: translateY(0); }
+
+    .section-label {
+      font-family: 'Noto Sans', sans-serif;
+      font-size: 10px; font-weight: 500;
+      letter-spacing: 5px; text-transform: uppercase;
+      color: var(--gold);
+      display: flex; align-items: center; gap: 12px;
+      margin-bottom: 20px;
+    }
+    .section-label::after {
+      content: '';
+      flex: 1; max-width: 80px; height: 1px;
+      background: var(--gold); opacity: 0.5;
+    }
+
+    .section-title {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(30px, 5vw, 46px);
+      font-weight: 700;
+      line-height: 1.2;
+      color: var(--ink);
+      margin-bottom: 32px;
+    }
+    .section-title em { font-style: italic; color: var(--red); }
+
+    .lead {
+      font-size: 19px;
+      font-style: italic;
+      color: var(--smoke);
+      border-left: 3px solid var(--gold);
+      padding-left: 24px;
+      margin-bottom: 32px;
+      line-height: 1.8;
+    }
+
+    p { margin-bottom: 20px; color: #2a1f10; }
+
+    /* ─── Full-width separator ─── */
+    .sep {
+      display: flex; align-items: center;
+      gap: 20px; padding: 40px 0;
+      color: var(--gold); font-size: 18px;
+    }
+    .sep::before, .sep::after {
+      content: '';
+      flex: 1; height: 1px;
+      background: linear-gradient(90deg, transparent, var(--gold-light), transparent);
+    }
+
+    /* ─── God Cards ─── */
+    .gods-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 0;
+    }
+
+    .god-card {
+      position: relative;
+      padding: 70px 0 70px;
+      border-bottom: 1px solid rgba(200,145,42,0.2);
+      opacity: 0; transform: translateY(50px);
+      transition: opacity 0.9s ease, transform 0.9s ease;
+    }
+    .god-card.visible { opacity: 1; transform: translateY(0); }
+    .god-card:last-child { border-bottom: none; }
+
+    .god-number {
+      position: absolute; top: 50px; right: 0;
+      font-family: 'Playfair Display', serif;
+      font-size: 120px; font-weight: 900;
+      line-height: 1;
+      color: transparent;
+      -webkit-text-stroke: 1px rgba(200,145,42,0.15);
+      pointer-events: none;
+      user-select: none;
+    }
+
+    .god-badge {
+      display: inline-flex; align-items: center; gap: 10px;
+      background: var(--parchment);
+      border: 1px solid rgba(200,145,42,0.4);
+      border-radius: 2px;
+      padding: 6px 18px;
+      margin-bottom: 20px;
+      font-family: 'Noto Sans', sans-serif;
+      font-size: 11px; font-weight: 500; letter-spacing: 3px;
+      text-transform: uppercase;
+    }
+    .god-badge .dot {
+      width: 8px; height: 8px; border-radius: 50%;
+    }
+
+    .god-card:nth-child(1) .dot { background: #c0392b; }
+    .god-card:nth-child(2) .dot { background: #2980b9; }
+    .god-card:nth-child(3) .dot { background: #27ae60; }
+    .god-card:nth-child(4) .dot { background: #8e44ad; }
+
+    .god-name {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(34px, 6vw, 54px);
+      font-weight: 900;
+      line-height: 1.1;
+      margin-bottom: 6px;
+    }
+    .god-name-vi {
+      font-size: 15px;
+      font-style: italic;
+      color: var(--smoke);
+      margin-bottom: 28px;
+      font-family: 'Noto Sans', sans-serif;
+    }
+
+    .god-card:nth-child(1) .god-name { color: var(--red); }
+    .god-card:nth-child(2) .god-name { color: #1a3a5c; }
+    .god-card:nth-child(3) .god-name { color: var(--jade); }
+    .god-card:nth-child(4) .god-name { color: #5a2d82; }
+
+    .god-attributes {
+      display: flex; flex-wrap: wrap; gap: 10px;
+      margin-bottom: 32px;
+    }
+    .attr-tag {
+      font-family: 'Noto Sans', sans-serif;
+      font-size: 11px; font-weight: 500;
+      letter-spacing: 1.5px;
+      padding: 5px 14px;
+      border-radius: 2px;
+      background: var(--parchment);
+      border: 1px solid rgba(200,145,42,0.3);
+      color: var(--smoke);
+    }
+
+    .story-block {
+      position: relative;
+      background: var(--parchment);
+      border: 1px solid rgba(200,145,42,0.25);
+      padding: 36px 40px;
+      margin: 32px 0;
+    }
+    .story-block::before {
+      content: '"';
+      position: absolute; top: -20px; left: 32px;
+      font-family: 'Playfair Display', serif;
+      font-size: 72px; line-height: 1;
+      color: var(--gold); opacity: 0.4;
+    }
+    .story-block p:last-child { margin-bottom: 0; }
+
+    .legend-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 20px; font-weight: 700;
+      color: var(--ink);
+      margin: 28px 0 12px;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .legend-title::before {
+      content: '';
+      width: 24px; height: 2px;
+      background: var(--gold);
+    }
+
+    .festival-tag {
+      display: inline-block;
+      background: linear-gradient(135deg, var(--red), #a33);
+      color: #fff;
+      font-family: 'Noto Sans', sans-serif;
+      font-size: 11px; letter-spacing: 2px;
+      padding: 4px 14px;
+      border-radius: 2px;
+      margin-bottom: 16px;
+    }
+
+    /* ─── Blockquote ─── */
+    blockquote {
+      margin: 40px 0;
+      padding: 30px 40px;
+      border-left: 4px solid var(--gold);
+      background: linear-gradient(135deg, rgba(200,145,42,0.06), transparent);
+      font-size: 20px;
+      font-style: italic;
+      line-height: 1.7;
+      color: var(--ink);
+      position: relative;
+    }
+    blockquote cite {
+      display: block;
+      margin-top: 12px;
+      font-size: 12px;
+      font-style: normal;
+      letter-spacing: 2px;
+      color: var(--smoke);
+      font-family: 'Noto Sans', sans-serif;
+    }
+
+    /* ─── Info boxes ─── */
+    .info-box {
+      background: var(--parchment);
+      border: 1px solid rgba(200,145,42,0.3);
+      border-top: 3px solid var(--gold);
+      padding: 28px 32px;
+      margin: 32px 0;
+    }
+    .info-box h4 {
+      font-family: 'Playfair Display', serif;
+      font-size: 17px; font-weight: 700;
+      color: var(--ink);
+      margin-bottom: 12px;
+    }
+    .info-box ul {
+      padding-left: 20px;
+    }
+    .info-box ul li {
+      margin-bottom: 8px;
+      color: #2a1f10;
+      font-size: 15px;
+    }
+
+    /* ─── Comparison table ─── */
+    .compare-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 32px 0;
+      font-size: 14px;
+    }
+    .compare-table th {
+      background: var(--ink);
+      color: var(--gold);
+      font-family: 'Noto Sans', sans-serif;
+      font-size: 11px; letter-spacing: 2px;
+      text-transform: uppercase;
+      padding: 14px 18px;
+      text-align: left;
+    }
+    .compare-table td {
+      padding: 14px 18px;
+      border-bottom: 1px solid rgba(200,145,42,0.15);
+      vertical-align: top;
+    }
+    .compare-table tr:nth-child(even) td { background: rgba(200,145,42,0.05); }
+    .compare-table tr:hover td { background: rgba(200,145,42,0.1); transition: 0.2s; }
+
+    /* ─── Timeline ─── */
+    .timeline {
+      position: relative;
+      padding: 20px 0;
+      margin: 32px 0;
+    }
+    .timeline::before {
+      content: '';
+      position: absolute; left: 16px; top: 0; bottom: 0;
+      width: 1px;
+      background: linear-gradient(to bottom, var(--gold), transparent);
+    }
+    .timeline-item {
+      display: flex; gap: 28px;
+      margin-bottom: 32px;
+      padding-left: 50px;
+      position: relative;
+    }
+    .timeline-dot {
+      position: absolute; left: 9px; top: 4px;
+      width: 16px; height: 16px;
+      border-radius: 50%;
+      background: var(--parchment);
+      border: 2px solid var(--gold);
+      flex-shrink: 0;
+    }
+    .timeline-year {
+      font-family: 'Playfair Display', serif;
+      font-size: 13px; font-weight: 700;
+      color: var(--gold);
+      white-space: nowrap;
+      min-width: 80px;
+    }
+    .timeline-content { flex: 1; }
+    .timeline-content strong {
+      display: block;
+      font-family: 'Playfair Display', serif;
+      font-size: 16px; margin-bottom: 4px;
+    }
+    .timeline-content p { font-size: 14px; margin-bottom: 0; }
+
+    /* ─── Pull quote ─── */
+    .pull-quote {
+      text-align: center;
+      padding: 60px 40px;
+      position: relative;
+    }
+    .pull-quote p {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(22px, 4vw, 32px);
+      font-weight: 700;
+      font-style: italic;
+      line-height: 1.5;
+      color: var(--ink);
+    }
+    .pull-quote p span { color: var(--red); }
+    .pull-quote::before, .pull-quote::after {
+      content: '';
+      display: block;
+      width: 80px; height: 1px;
+      background: var(--gold);
+      margin: 0 auto 28px;
+    }
+    .pull-quote::after { margin: 28px auto 0; }
+
+    /* ─── Grid cards ─── */
+    .card-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 20px;
+      margin: 32px 0;
+    }
+    @media(max-width: 600px) { .card-grid { grid-template-columns: 1fr; } }
+
+    .mini-card {
+      padding: 24px;
+      background: var(--parchment);
+      border: 1px solid rgba(200,145,42,0.25);
+      border-bottom: 3px solid var(--gold);
+    }
+    .mini-card h4 {
+      font-family: 'Playfair Display', serif;
+      font-size: 16px; font-weight: 700;
+      margin-bottom: 8px;
+      color: var(--ink);
+    }
+    .mini-card p { font-size: 14px; margin-bottom: 0; color: var(--smoke); }
+
+    /* ─── Footer ─── */
+    footer {
+      background: var(--ink);
+      color: rgba(245,234,216,0.7);
+      text-align: center;
+      padding: 60px 28px;
+      font-family: 'Noto Sans', sans-serif;
+      font-size: 12px; letter-spacing: 2px;
+    }
+    footer .footer-logo {
+      font-family: 'Playfair Display', serif;
+      font-size: 28px; font-weight: 900;
+      color: var(--gold);
+      margin-bottom: 20px;
+    }
+    footer p { margin-bottom: 8px; color: rgba(245,234,216,0.5); }
+
+    /* ─── TOC Sidebar ─── */
+    .toc {
+      position: fixed; right: 28px; top: 50%;
+      transform: translateY(-50%);
+      display: flex; flex-direction: column; gap: 8px;
+      z-index: 100;
+    }
+    @media(max-width: 1100px) { .toc { display: none; } }
+
+    .toc-item {
+      display: flex; align-items: center; gap: 10px;
+      cursor: pointer;
+      font-family: 'Noto Sans', sans-serif;
+      font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase;
+      color: rgba(107,92,74,0.5);
+      transition: color 0.3s;
+      text-decoration: none;
+    }
+    .toc-item:hover, .toc-item.active { color: var(--gold); }
+    .toc-item .toc-dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: currentColor; flex-shrink: 0;
+      transition: transform 0.3s;
+    }
+    .toc-item.active .toc-dot { transform: scale(1.8); }
+
+    /* ─── Animations ─── */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(24px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+  <div id="progress-bar"></div>
+
+  <!-- TOC -->
+  <nav class="toc" aria-label="Mục lục">
+    <a class="toc-item active" href="#nguon-goc"><span class="toc-dot"></span>Nguồn gốc</a>
+    <a class="toc-item" href="#tan-vien"><span class="toc-dot"></span>Tản Viên</a>
+    <a class="toc-item" href="#phu-dong"><span class="toc-dot"></span>Phù Đổng</a>
+    <a class="toc-item" href="#chu-dong-tu"><span class="toc-dot"></span>Chử Đồng Tử</a>
+    <a class="toc-item" href="#lieu-hanh"><span class="toc-dot"></span>Liễu Hạnh</a>
+    <a class="toc-item" href="#y-nghia"><span class="toc-dot"></span>Ý nghĩa</a>
+    <a class="toc-item" href="#le-hoi"><span class="toc-dot"></span>Lễ hội</a>
+    <a class="toc-item" href="#hom-nay"><span class="toc-dot"></span>Hôm nay</a>
+  </nav>
+
+  <!-- ─── HERO ─── -->
+  <header class="hero">
+    <div class="hero-border"></div>
+    <div class="hero-corner tl"></div>
+    <div class="hero-corner tr"></div>
+    <div class="hero-corner bl"></div>
+    <div class="hero-corner br"></div>
+
+    <p class="hero-eyebrow">Tín ngưỡng dân gian Việt Nam</p>
+    <h1>
+      Tứ<br>
+      <span>Bất Tử</span>
+    </h1>
+    <p class="hero-subtitle">Bốn vị thần bất diệt trong tâm hồn người Việt — biểu tượng của sức mạnh, tình yêu, lòng dũng cảm và sự hóa thân vĩnh cửu</p>
+
+    <div class="hero-divider"><span>✦</span></div>
+
+    <div class="hero-meta">
+      <span>Tín ngưỡng bản địa</span>
+      <span>Thiên niên kỷ</span>
+      <span>Văn hóa Việt</span>
+    </div>
+
+    <div class="scroll-hint">CUỘN XUỐNG</div>
+  </header>
+
+  <!-- ─── MAIN ─── -->
+  <main>
+
+    <!-- NGUỒN GỐC -->
+    <section id="nguon-goc" class="section container">
+      <div class="section-label">I · Khởi Nguyên</div>
+      <h2 class="section-title">Tứ Bất Tử là gì? <em>Nguồn gốc và ý nghĩa</em></h2>
+
+      <p class="lead">
+        "Tứ Bất Tử" — bốn vị thần bất tử — là một trong những khái niệm tâm linh đặc sắc nhất, thuần Việt nhất trong kho tàng tín ngưỡng dân gian của dân tộc Việt Nam. Không vay mượn từ thần thoại Trung Hoa hay Ấn Độ, đây là bốn hình tượng sinh ra từ chính lịch sử và tâm hồn người Việt.
+      </p>
+
+      <p>Khái niệm "Tứ Bất Tử" xuất hiện trong văn học và tín ngưỡng dân gian Việt Nam từ thời Lý - Trần, được củng cố qua các thế kỷ bởi những ghi chép của các nhà nho, nhà sử học và những câu chuyện truyền khẩu trong dân gian. Bốn vị thần gồm: <strong>Tản Viên Sơn Thánh</strong>, <strong>Thánh Gióng (Phù Đổng Thiên Vương)</strong>, <strong>Chử Đồng Tử</strong>, và <strong>Thánh Mẫu Liễu Hạnh</strong>.</p>
+
+      <p>Điều đặc biệt là mỗi vị thần đại diện cho một giá trị nền tảng của người Việt — sức mạnh thiên nhiên và sự ổn định của đất nước, tinh thần chống ngoại xâm bất khuất, tình yêu và sự bao dung, cùng sự tự do phóng khoáng của tâm hồn. Ghép lại, bốn hình tượng này phác thảo nên một bức chân dung tinh thần trọn vẹn của dân tộc Việt.</p>
+
+      <blockquote>
+        "Nhân dân ta có câu: đất có Tổ, nước có Vua — nhưng trời có bốn vị thần bất tử, đời đời trấn giữ cõi thiêng của người Việt."
+        <cite>— Theo ghi chép dân gian</cite>
+      </blockquote>
+
+      <div class="info-box">
+        <h4>⊡ Bốn chiều kích của Tứ Bất Tử</h4>
+        <ul>
+          <li><strong>Tản Viên Sơn Thánh</strong> — Quyền năng tự nhiên, sự cân bằng trời-đất-người</li>
+          <li><strong>Phù Đổng Thiên Vương (Thánh Gióng)</strong> — Tinh thần vệ quốc, sức mạnh dân tộc</li>
+          <li><strong>Chử Đồng Tử</strong> — Tình yêu, hôn nhân, phúc đức và đời sống tâm linh</li>
+          <li><strong>Thánh Mẫu Liễu Hạnh</strong> — Tự do, phụ nữ, mẫu tính và sự bất khuất của tâm hồn</li>
+        </ul>
+      </div>
+
+      <p>Không ai trong số bốn vị thần này được tôn thờ đơn lẻ theo kiểu một thần giáo. Họ cùng tồn tại, cùng bổ sung cho nhau trong một thế giới quan đa thần, hài hòa, mang đậm tinh thần cộng đồng của người Việt. Sự hiện diện của họ trong đời sống tín ngưỡng không phải để ban phát phép màu, mà để nhắc nhở con người về những giá trị cốt lõi cần gìn giữ.</p>
+    </section>
+
+    <div class="sep container">✦ ✦ ✦</div>
+
+    <!-- GODS SECTION HEADING -->
+    <section class="section container" style="padding-bottom: 20px;">
+      <div class="section-label">II · Bốn Huyền Thoại</div>
+      <h2 class="section-title">Câu chuyện của từng <em>vị thần bất tử</em></h2>
+    </section>
+
+    <!-- TẢN VIÊN -->
+    <section id="tan-vien" class="god-card container">
+      <div class="god-number">一</div>
+      <div class="god-badge"><span class="dot"></span>Thứ nhất</div>
+      <h3 class="god-name">Tản Viên Sơn Thánh</h3>
+      <p class="god-name-vi">Thần núi Ba Vì — Đức Thánh Tản — Sơn Tinh</p>
+      <div class="god-attributes">
+        <span class="attr-tag">Núi rừng</span>
+        <span class="attr-tag">Đất nước</span>
+        <span class="attr-tag">Thiên nhiên</span>
+        <span class="attr-tag">Hôn nhân</span>
+        <span class="attr-tag">Nông nghiệp</span>
+      </div>
+
+      <p>Trong số Tứ Bất Tử, Tản Viên Sơn Thánh được coi là vị thần đứng đầu, có uy quyền tối thượng. Ông gắn liền với dãy núi Ba Vì hùng vĩ — ngọn núi thiêng của người Việt từ ngàn đời, nơi được ví như "trái tim của đất mẹ Lạc Hồng".</p>
+
+      <p class="festival-tag">🏔 Thần Núi & Sơn Tinh</p>
+
+      <div class="story-block">
+        <p>Theo truyền thuyết, Tản Viên vốn là một chàng trai mồ côi, nghèo khó, được thần rùa vàng (Thần Kim Quy) ban cho cây gậy thần có thể hô mưa gọi gió, di chuyển sơn hà. Với phép thuật vô song và tấm lòng nhân hậu, ông đã chiến thắng Thủy Tinh trong cuộc tranh giành nàng Mỵ Nương — con gái Vua Hùng — và được nhà vua gả con cho.</p>
+        <p>Cuộc chiến giữa Sơn Tinh và Thủy Tinh là một trong những truyền thuyết đặc sắc nhất của người Việt — biểu tượng cho cuộc chinh phục thiên nhiên muôn đời của cư dân đồng bằng sông Hồng: đắp đê, chống lũ, khai hoang lập ấp. Thủy Tinh thua rồi lại dấy binh hằng năm — đó chính là hiện tượng lũ lụt định kỳ mà người Việt phải đối mặt.</p>
+      </div>
+
+      <div class="legend-title">Quyền năng và ý nghĩa biểu tượng</div>
+      <p>Tản Viên không chỉ là thần núi. Ông là hiện thân của <strong>sự cân bằng vũ trụ</strong> — người trung gian giữa trời cao và đất thấp, giữa thần linh và con người. Với người Việt, núi Ba Vì là nơi trú ngụ của linh hồn đất nước, là cột chống trời bảo vệ cho cả vùng đồng bằng rộng lớn.</p>
+
+      <p>Trong tín ngưỡng dân gian, Đức Thánh Tản được thờ phụng khắp nơi từ vùng trung du Bắc Bộ đến các tỉnh đồng bằng. Ngày hội đền Và (mồng 7 tháng Giêng âm lịch) và lễ hội đền Hạ, đền Trung, đền Thượng trên núi Ba Vì là những dịp để người dân tưởng nhớ và cầu xin ân phước của ngài.</p>
+    </section>
+
+    <!-- PHÙ ĐỔNG -->
+    <section id="phu-dong" class="god-card container">
+      <div class="god-number">二</div>
+      <div class="god-badge"><span class="dot"></span>Thứ hai</div>
+      <h3 class="god-name">Phù Đổng Thiên Vương</h3>
+      <p class="god-name-vi">Thánh Gióng — Đức Phù Đổng — Vị thần vệ quốc</p>
+      <div class="god-attributes">
+        <span class="attr-tag">Chống giặc ngoại xâm</span>
+        <span class="attr-tag">Sức mạnh dân tộc</span>
+        <span class="attr-tag">Lòng yêu nước</span>
+        <span class="attr-tag">Thiếu nhi</span>
+        <span class="attr-tag">Anh hùng</span>
+      </div>
+
+      <p>Không có hình tượng nào mang sức sống mãnh liệt như Thánh Gióng — cậu bé làng Phù Đổng ba tuổi chưa biết nói, biết cười, nhưng khi tiếng trống trận vang lên, đã đứng dậy xin đi đánh giặc Ân, lớn lên trong chớp mắt, một tay nhổ cả bụi tre làm vũ khí, phá tan quân thù, rồi bay về trời.</p>
+
+      <div class="story-block">
+        <p>Vua Hùng thứ 6 gặp họa ngoại xâm từ giặc Ân hung tàn. Sứ giả đi khắp nơi tìm người tài. Khi đến làng Phù Đổng, một đứa trẻ ba tuổi chưa từng nói một lời bỗng cất tiếng: <em>"Hãy về tâu với vua, đúc cho ta một con ngựa sắt, một cái roi sắt, một áo giáp sắt — ta sẽ phá giặc."</em></p>
+        <p>Từ đó cậu bé ăn mỗi bữa mấy nong cơm, uống hàng vò nước, lớn nhanh như thổi. Ngựa sắt đúc xong, Gióng vươn vai thành tráng sĩ oai phong, phóng lên lưng ngựa, xông thẳng vào trận địa. Đánh xong giặc, ngựa bay thẳng lên trời. Nơi ngựa đi qua để lại dấu vết là ao hồ, nơi tre bị nhổ gốc nay gọi là "tre đằng ngà" vẫn còn vàng óng.</p>
+      </div>
+
+      <div class="legend-title">Biểu tượng trường cửu</div>
+      <p>Thánh Gióng là hiện thân của <strong>sức mạnh phi thường tiềm ẩn trong người dân bình thường</strong>. Câu chuyện về một đứa trẻ bình dị trở thành tráng sĩ cứu nước là thông điệp muôn đời: khi đất nước lâm nguy, sức mạnh của toàn dân có thể hội tụ thành sức mạnh thần thánh.</p>
+
+      <p>UNESCO đã công nhận Hội Gióng tại đền Phù Đổng và đền Sóc (Hà Nội) là <strong>Di sản văn hóa phi vật thể đại diện của nhân loại</strong> năm 2010 — minh chứng cho sức sống bất diệt của huyền thoại này trong lòng người Việt và cả thế giới.</p>
+
+      <blockquote>
+        "Ông Gióng không nói, không cười ba năm — rồi một lần lên tiếng là cứu cả giang sơn."
+        <cite>— Tục ngữ dân gian</cite>
+      </blockquote>
+    </section>
+
+    <!-- CHỬ ĐỒNG TỬ -->
+    <section id="chu-dong-tu" class="god-card container">
+      <div class="god-number">三</div>
+      <div class="god-badge"><span class="dot"></span>Thứ ba</div>
+      <h3 class="god-name">Chử Đồng Tử</h3>
+      <p class="god-name-vi">Đức Thánh Chử — Chử Đạo Tổ — Thần Tình Yêu và Phúc Đức</p>
+      <div class="god-attributes">
+        <span class="attr-tag">Tình yêu</span>
+        <span class="attr-tag">Hôn nhân</span>
+        <span class="attr-tag">Giàu có</span>
+        <span class="attr-tag">Đạo học</span>
+        <span class="attr-tag">Phụ nữ</span>
+      </div>
+
+      <p>Chử Đồng Tử là vị thần duy nhất trong Tứ Bất Tử không có nguồn gốc hoàng tộc hay siêu nhiên từ đầu. Ông bắt đầu là một người nghèo khốn cùng nhất — đến chiếc khố che thân cũng không có — nhưng cuối đời lại bay lên cõi tiên cùng vợ hiền. Đây chính là câu chuyện về <strong>sức mạnh của tình yêu và đạo đức</strong> vượt lên nghịch cảnh.</p>
+
+      <div class="story-block">
+        <p>Chử Đồng Tử sống cùng cha trên bãi sông Hồng trong cảnh cùng khổ. Cha qua đời, để lại duy nhất một chiếc khố — Chử Đồng Tử đã đắp cho cha mà chôn, bản thân trần truồng mưu sinh bằng nghề đánh cá. Một ngày, thuyền của công chúa Tiên Dung — con gái Vua Hùng — ghé bến. Tiên Dung tắm sau màn vải, vô tình che lấy chỗ Chử Đồng Tử đang vùi mình dưới cát trốn tránh.</p>
+        <p>Khi màn vải mở ra, hai người nhìn thấy nhau. Thay vì xử tội, Tiên Dung coi đó là duyên trời định, và quyết cưới Chử Đồng Tử bất chấp sự phản đối của vua cha. Họ sống hạnh phúc, cùng nhau buôn bán, rồi Chử Đồng Tử gặp được đạo sĩ, học phép thuật, dựng lên lâu đài bằng gậy thần một đêm. Cuối cùng cả hai bay lên trời, để lại bãi đất trống — nay gọi là Dạ Trạch.</p>
+      </div>
+
+      <div class="legend-title">Tình yêu vượt mọi ranh giới giai cấp</div>
+      <p>Huyền thoại Chử Đồng Tử - Tiên Dung là câu chuyện tình yêu đẹp nhất trong kho tàng truyền thuyết Việt Nam — nơi một công chúa chọn người nghèo khổ vì duyên số và tấm lòng, không phải vì địa vị hay tài sản. Điều này phản ánh một quan niệm nhân văn sâu sắc: <strong>tình yêu chân thật và đức hạnh cao quý hơn bất kỳ của cải hay danh vọng nào.</strong></p>
+
+      <p>Chử Đồng Tử còn được coi là tổ sư của đạo Nội (một dòng đạo bản địa của người Việt), người đầu tiên mang ánh sáng tâm linh cho dân tộc. Ông được thờ phụng tại đền Dạ Trạch (Hưng Yên) và nhiều ngôi đền dọc theo sông Hồng.</p>
+    </section>
+
+    <!-- LIỄU HẠNH -->
+    <section id="lieu-hanh" class="god-card container">
+      <div class="god-number">四</div>
+      <div class="god-badge"><span class="dot"></span>Thứ tư</div>
+      <h3 class="god-name">Thánh Mẫu Liễu Hạnh</h3>
+      <p class="god-name-vi">Mẫu Đệ Tam — Vân Hương Thánh Mẫu — Liễu Hạnh Tiên Chúa</p>
+      <div class="god-attributes">
+        <span class="attr-tag">Phụ nữ</span>
+        <span class="attr-tag">Tự do</span>
+        <span class="attr-tag">Thơ ca</span>
+        <span class="attr-tag">Mẫu tính</span>
+        <span class="attr-tag">Nhân gian</span>
+      </div>
+
+      <p>Liễu Hạnh là vị thần duy nhất trong Tứ Bất Tử là nữ giới — và có lẽ cũng là vị thần gần gũi nhất với con người. Bà không phải thần núi, không phải anh hùng chiến trận — bà là một người phụ nữ yêu tự do, yêu cái đẹp, không chịu sống trong khuôn phép cứng nhắc, và vì thế mà trở nên bất tử.</p>
+
+      <div class="story-block">
+        <p>Theo truyền thuyết, Liễu Hạnh vốn là tiên nữ trên Thiên Đình, lỡ tay đánh vỡ chén ngọc của Ngọc Hoàng mà bị đày xuống trần. Sống kiếp người với đầy đủ buồn vui, yêu thương, mất mát — bà lấy chồng, sinh con, nhưng lại sớm qua đời. Nhớ cõi trần, bà xin tái sinh, lại sống lại, lại yêu thương và lại chết đi.</p>
+        <p>Nhiều tích kể rằng Liễu Hạnh có lúc ẩn mình làm cô hàng nước ở Đèo Ngang, có lúc ngao du sơn thủy ngâm thơ đàm đạo với các nhà nho. Bà từng đối thơ với Phùng Khắc Khoan và thắng. Dù có pháp lực vô biên, bà vẫn mang nặng lòng trần — nỗi nhớ nhà, nhớ con, nhớ chồng — chính nỗi người ấy làm bà trở nên bất tử trong lòng người Việt.</p>
+      </div>
+
+      <div class="legend-title">Biểu tượng phụ nữ Việt Nam</div>
+      <p>Liễu Hạnh là hiện thân của <strong>người phụ nữ Việt Nam đích thực</strong> — vừa nhân hậu, vừa bất khuất; vừa mềm mại trong tình yêu, vừa cứng rắn trước bất công. Việc một vị thần nữ được đưa vào Tứ Bất Tử phản ánh sự tôn trọng sâu sắc mà người Việt dành cho người phụ nữ, khác biệt rõ rệt so với nhiều nền văn hóa đương thời.</p>
+
+      <p>Đạo Mẫu — tín ngưỡng thờ Mẫu Tam Phủ, Tứ Phủ — mà Liễu Hạnh là trung tâm, đã được UNESCO công nhận là Di sản văn hóa phi vật thể của nhân loại năm 2016, với nghi lễ Hầu đồng đặc sắc và đầy màu sắc.</p>
+
+      <blockquote>
+        "Thánh Mẫu Liễu Hạnh ba lần xuống trần — để sống, để yêu, để thấu hiểu nỗi lòng người."
+        <cite>— Truyền thuyết dân gian</cite>
+      </blockquote>
+    </section>
+
+    <div class="sep container">✦ ✦ ✦</div>
+
+    <!-- Ý NGHĨA -->
+    <section id="y-nghia" class="section container">
+      <div class="section-label">III · Triết Lý</div>
+      <h2 class="section-title">Quan niệm, giá trị <em>và bài học muôn đời</em></h2>
+
+      <p class="lead">
+        Tứ Bất Tử không chỉ là những huyền thoại xa xôi. Chúng là hệ thống giá trị sống được mã hóa dưới dạng những câu chuyện đẹp — để thế hệ này truyền lại cho thế hệ sau, không cần sách vở, không cần chữ viết.
+      </p>
+
+      <div class="card-grid">
+        <div class="mini-card">
+          <h4>🏔 Hài hòa với thiên nhiên</h4>
+          <p>Tản Viên nhắc nhở rằng con người phải sống thuận theo tự nhiên. Đất đai, sông núi là linh thiêng — phải kính trọng, không được phá hủy. Đây là triết lý sinh thái học xuất hiện từ ngàn năm trước.</p>
+        </div>
+        <div class="mini-card">
+          <h4>⚔️ Tinh thần bất khuất</h4>
+          <p>Thánh Gióng là lời nhắn: mỗi người dân đều mang trong mình sức mạnh bảo vệ quê hương. Khi dân tộc cần, sức mạnh đó sẽ bùng lên, không gì ngăn cản được.</p>
+        </div>
+        <div class="mini-card">
+          <h4>💞 Tình yêu thuần khiết</h4>
+          <p>Chử Đồng Tử chứng minh rằng tình yêu chân thật và đức hạnh cao quý hơn địa vị, tiền bạc. Những con người nghèo khổ nhưng chính trực cũng xứng đáng được hạnh phúc và trường sinh.</p>
+        </div>
+        <div class="mini-card">
+          <h4>🌸 Tự do tâm hồn</h4>
+          <p>Liễu Hạnh dạy rằng không ai có quyền giam cầm tâm hồn một con người. Người phụ nữ cũng có quyền sống, yêu, và được tôn trọng như bất kỳ ai.</p>
+        </div>
+      </div>
+
+      <div class="pull-quote">
+        <p>Bốn vị thần — bốn <span>chiều kích</span> của một con người hoàn chỉnh: <span>sức mạnh</span>, <span>dũng khí</span>, <span>tình yêu</span> và <span>tự do</span>.</p>
+      </div>
+
+      <p>Nhìn từ góc độ triết học, Tứ Bất Tử phản ánh một thế giới quan <strong>nhân bản và cân bằng</strong>. Người Việt không thần thánh hóa sức mạnh vật chất hay quyền lực chính trị đơn thuần, mà đề cao cả tình cảm con người (Chử Đồng Tử), sự bình đẳng giới (Liễu Hạnh), hòa hợp với tự nhiên (Tản Viên), và lòng yêu nước tự nguyện (Thánh Gióng).</p>
+
+      <p>Điều thú vị là Tứ Bất Tử không có vị thần nào đại diện cho sự giàu có vật chất hay quyền lực tuyệt đối. Đây là sự khác biệt đáng kể so với nhiều hệ thống thần thoại khác trên thế giới — phản ánh một xã hội đề cao <em>đức hạnh</em> hơn <em>địa vị</em>.</p>
+    </section>
+
+    <!-- LỄ HỘI -->
+    <section id="le-hoi" class="section container">
+      <div class="section-label">IV · Di Sản Sống</div>
+      <h2 class="section-title">Lễ hội và <em>di sản văn hóa</em></h2>
+
+      <p>Tứ Bất Tử không chỉ tồn tại trong sách vở hay ký ức. Họ sống trong những lễ hội rực rỡ, những ngôi đền cổ kính, những nghi lễ thấm đẫm hương khói từ ngàn đời nay.</p>
+
+      <div class="timeline">
+        <div class="timeline-item">
+          <div class="timeline-dot"></div>
+          <div class="timeline-year">Tháng 1 ÂL</div>
+          <div class="timeline-content">
+            <strong>Lễ hội đền Hạ - Tản Viên (Ba Vì, Hà Nội)</strong>
+            <p>Lễ hội khai xuân tại quần thể đền thờ Đức Thánh Tản, hàng vạn người hành hương lên núi Ba Vì dâng lễ, cầu mưa thuận gió hòa, mùa màng bội thu.</p>
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-dot"></div>
+          <div class="timeline-year">4/4 ÂL</div>
+          <div class="timeline-content">
+            <strong>Hội Gióng - Phù Đổng (Gia Lâm, Hà Nội)</strong>
+            <p>Di sản văn hóa phi vật thể nhân loại được UNESCO công nhận. Tái hiện toàn bộ cuộc chiến đánh giặc Ân của Thánh Gióng với hàng trăm diễn viên dân gian.</p>
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-dot"></div>
+          <div class="timeline-year">Tháng 2 ÂL</div>
+          <div class="timeline-content">
+            <strong>Lễ hội đền Chử Đồng Tử - Tiên Dung (Khoái Châu, Hưng Yên)</strong>
+            <p>Lễ hội rước nước thiêng, múa rồng, hát chèo ca ngợi mối tình Chử Đồng Tử - Tiên Dung. Hàng năm thu hút hàng chục nghìn du khách thập phương.</p>
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-dot"></div>
+          <div class="timeline-year">3/3 ÂL</div>
+          <div class="timeline-content">
+            <strong>Lễ hội Phủ Giầy - Liễu Hạnh (Nam Định)</strong>
+            <p>Lễ hội lớn nhất của tín ngưỡng thờ Mẫu tại Việt Nam. Nghi lễ hầu đồng hoành tráng, rước kiệu, tế lễ kéo dài nhiều ngày với không khí tâm linh huyền bí và thiêng liêng.</p>
+          </div>
+        </div>
+      </div>
+
+      <table class="compare-table">
+        <thead>
+          <tr>
+            <th>Vị thần</th>
+            <th>Địa điểm thờ chính</th>
+            <th>Thời gian lễ hội</th>
+            <th>Điều cầu khấn</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Tản Viên Sơn Thánh</strong></td>
+            <td>Đền Và, đền Thượng (Ba Vì, Hà Nội)</td>
+            <td>Tháng 1, tháng 9 ÂL</td>
+            <td>Mưa thuận gió hòa, an lành, nông nghiệp</td>
+          </tr>
+          <tr>
+            <td><strong>Phù Đổng Thiên Vương</strong></td>
+            <td>Đền Phù Đổng (Gia Lâm), đền Sóc (Sóc Sơn)</td>
+            <td>4/4 ÂL, 6/1 ÂL</td>
+            <td>Sức mạnh, bảo hộ, con cái khỏe mạnh</td>
+          </tr>
+          <tr>
+            <td><strong>Chử Đồng Tử</strong></td>
+            <td>Đền Dạ Trạch (Khoái Châu, Hưng Yên)</td>
+            <td>Tháng 2 ÂL</td>
+            <td>Tình duyên, hôn nhân, tài lộc, thương mại</td>
+          </tr>
+          <tr>
+            <td><strong>Thánh Mẫu Liễu Hạnh</strong></td>
+            <td>Phủ Giầy (Nam Định), Phủ Tây Hồ (Hà Nội)</td>
+            <td>3/3 ÂL, 8/8 ÂL</td>
+            <td>Sức khỏe, phụ nữ, sự nghiệp, phúc đức</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- HÔM NAY -->
+    <section id="hom-nay" class="section container">
+      <div class="section-label">V · Hiện Tại & Tương Lai</div>
+      <h2 class="section-title">Tứ Bất Tử trong <em>thế giới hiện đại</em></h2>
+
+      <p class="lead">
+        Khi Việt Nam bước vào kỷ nguyên số và hội nhập toàn cầu, Tứ Bất Tử không hề lu mờ — ngược lại, họ đang được tái khám phá và diễn giải lại bởi những thế hệ trẻ với con mắt mới mẻ hơn.
+      </p>
+
+      <p>Phong trào nghệ thuật "di sản sáng tạo" đang nở rộ tại Việt Nam — nơi các nghệ sĩ trẻ tái hiện Tứ Bất Tử qua tranh minh họa hiện đại, game mobile, phim hoạt hình, thậm chí cosplay và thời trang. Thánh Gióng xuất hiện trong truyện tranh manga kiểu Việt; Liễu Hạnh trở thành nhân vật trong tiểu thuyết lãng mạn đương đại; Chử Đồng Tử và Tiên Dung là cặp đôi biểu tượng của "tình yêu vượt mọi rào cản".</p>
+
+      <div class="info-box">
+        <h4>⊡ Tứ Bất Tử và UNESCO</h4>
+        <ul>
+          <li><strong>2010:</strong> Hội Gióng (Phù Đổng & đền Sóc) — Di sản văn hóa phi vật thể nhân loại</li>
+          <li><strong>2016:</strong> Thực hành tín ngưỡng thờ Mẫu Tam phủ (liên quan đến Liễu Hạnh) — Di sản văn hóa phi vật thể nhân loại</li>
+          <li><strong>2023-2025:</strong> Các đề xuất đang được nghiên cứu để trình UNESCO công nhận thêm các lễ hội liên quan đến Tản Viên và Chử Đồng Tử</li>
+        </ul>
+      </div>
+
+      <p>Điều kỳ lạ và đáng kinh ngạc là dù xã hội thay đổi đến đâu — từ xã hội nông nghiệp lên đô thị, từ phong kiến đến hiện đại — những câu hỏi mà Tứ Bất Tử đặt ra vẫn còn nguyên giá trị: <em>Ta sống như thế nào với thiên nhiên? Ta có sẵn sàng hy sinh cho cộng đồng không? Tình yêu có vượt qua được địa vị và nghèo khó không? Người phụ nữ có được tự do không?</em></p>
+
+      <p>Những câu hỏi đó, ngàn năm sau, vẫn chưa cũ.</p>
+
+      <div class="pull-quote">
+        <p>Họ bất tử không phải vì phép màu — mà vì <span>những giá trị họ đại diện</span> chưa bao giờ ngừng cần thiết với con người.</p>
+      </div>
+
+      <div class="legend-title">Bài học cho người trẻ hôm nay</div>
+      <p>Tứ Bất Tử cũng là lời nhắc gửi tới thế hệ trẻ: bản sắc dân tộc không phải là gánh nặng cần bỏ đi khi hội nhập — mà là nguồn sức mạnh cần khai thác. Mỗi người Việt mang trong mình dòng máu của những huyền thoại đó — sức mạnh của Gióng, trái tim của Chử Đồng Tử, trí tuệ của Tản Viên, và tự do của Liễu Hạnh.</p>
+
+      <p>Thế giới ngày nay cần những con người biết hài hòa với thiên nhiên, dám đứng lên bảo vệ cái đúng, biết yêu thương chân thành và không để bất kỳ ai giam cầm tâm hồn mình. Đó chính xác là điều mà Tứ Bất Tử đã dạy người Việt từ hàng nghìn năm trước.</p>
+    </section>
+
+    <div class="sep container">✦ ✦ ✦</div>
+
+    <!-- KẾT -->
+    <section class="section container" style="padding-bottom: 100px;">
+      <div class="section-label">Kết · Bất Tử</div>
+      <h2 class="section-title">Bốn ngọn lửa <em>không bao giờ tắt</em></h2>
+
+      <p class="lead">
+        Tứ Bất Tử là bằng chứng sống động cho thấy một dân tộc có thể giữ gìn linh hồn mình qua hàng nghìn năm dâu bể, chiến tranh và biến đổi, chỉ bằng những câu chuyện — kể mãi, nghe mãi, tin mãi.
+      </p>
+
+      <p>Họ không phải là những vị thần toàn năng ngồi trên cao ban phát phép lạ. Họ là những con người — có đau đớn, có yêu thương, có lầm lỡ, có hy sinh — đã sống trọn vẹn đến mức cả trời đất phải ghi nhận. Và chính vì vậy, họ mới thực sự bất tử.</p>
+
+      <p>Mỗi khi ta đứng trước một lựa chọn khó khăn, ta có thể hỏi: <em>Tản Viên sẽ làm gì? Gióng sẽ làm gì? Chử Đồng Tử sẽ làm gì? Liễu Hạnh sẽ làm gì?</em> Và câu trả lời từ ngàn năm trước vẫn đủ soi đường cho ta hôm nay.</p>
+
+      <blockquote>
+        "Đất nước nào có những huyền thoại như vậy — là đất nước ấy chưa bao giờ, và sẽ không bao giờ, thực sự bị khuất phục."
+        <cite>— Nhận định về văn hóa dân gian Việt Nam</cite>
+      </blockquote>
+    </section>
+
+  </main>
+
+  <footer>
+    <div class="footer-logo">Tứ Bất Tử</div>
+    <p>Bốn vị thần bất tử trong tín ngưỡng dân gian Việt Nam</p>
+    <p style="margin-top: 20px;">✦ Tản Viên · Phù Đổng · Chử Đồng Tử · Liễu Hạnh ✦</p>
+    <p style="margin-top: 24px;">Nội dung mang tính tổng hợp và giáo dục về văn hóa tín ngưỡng dân gian Việt Nam</p>
+  </footer>
+
+  <script>
+    // Progress bar
+    window.addEventListener('scroll', () => {
+      const scrollTop = window.scrollY;
+      const docHeight = document.body.scrollHeight - window.innerHeight;
+      const progress = (scrollTop / docHeight) * 100;
+      document.getElementById('progress-bar').style.width = progress + '%';
+    });
+
+    // Intersection Observer for sections
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+        }
+      });
+    }, { threshold: 0.1 });
+
+    document.querySelectorAll('.section, .god-card').forEach(el => observer.observe(el));
+
+    // TOC active state
+    const tocItems = document.querySelectorAll('.toc-item');
+    const sections = document.querySelectorAll('section[id]');
+
+    const tocObserver = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          tocItems.forEach(item => item.classList.remove('active'));
+          const activeItem = document.querySelector(`.toc-item[href="#${entry.target.id}"]`);
+          if (activeItem) activeItem.classList.add('active');
+        }
+      });
+    }, { threshold: 0.4 });
+
+    sections.forEach(s => tocObserver.observe(s));
+
+    // Smooth TOC click
+    tocItems.forEach(item => {
+      item.addEventListener('click', e => {
+        e.preventDefault();
+        const target = document.querySelector(item.getAttribute('href'));
+        if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+    });
+  </script>
+</body>
+</html>
